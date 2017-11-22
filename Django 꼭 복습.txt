@@ -1,0 +1,125 @@
+DjangoPycharm이라는 가상환경을 파이참에서 만들고,
+django-admin.py startproject testproject
+cd testproject
+
+여기 까지 하면 test project라는 프로젝트에 test project라는 기본 앱과
+장고 프로젝트에서 사용할 명령어들을 위한 파일인 manage.py가 있다.
+
+test project라는 앱이 기본적으로 있었지만
+manage.py startapp 앱이름 으로 앱을 얼마든지 추가 가능하다.
+
+서버 실행 설정 
+Run > Edit Configuration > + > Python > Name 지정 후 Script부분에 manage.py 경로
+삽입하고, Script 파라미터에 runserver를 입력하고 localhost:8000 접속
+
+python manage.py startapp books 로 books라는 이름의 앱 추가
+
+첫번 째로 해야할 것은 데이터를 모델링하는 것이다. testproject/books/models.py로 
+가서 모델을 만드는 코드를 작성한다. 
+장고 모델은 파이썬 클래스로 django.db.models.Model를 확장(상속)한다.
+models.Model class는 데이터베이스의 테이블과 상응된다. 
+장고는 Book class에서 어떻게 북 테이블을 데이터베이스에 만들지 이해할 수 있다.
+
+testproject/testproject/settings.py로 가서 DATABASE를 보면 디폴트 커넥션이
+db.sqlite3 파일에 저장된 sqlite database임을 알 수 있다.
+
+파이썬은 sqlite용 데이터베이스 드라이버가 함께 제공되므로 별도의 서버를 설치할 필요
+없으므로 프로젝트를 할 때 매우 유동하다.
+보다 실질적인 프로젝트를 위해 장고는 다양한 무료 상용 데이터베이스 시스템을 지원
+Oracle, MySql, MongoDB 등 모두 데이터베이스로 가능하지만 장고는 디폴트로
+SQLite3 데이터베이스 엔진을 사용하는 것으로 지정한다.
+
+새롭게 정의된 모델을 사용하려면 setting을 편집해야 한다.
+장고 프로젝트는 어플리케이션으로 구성되고 파일, 인증, 기타 작업을 제공하는 
+세션을위한 다양한 응용 프로그램과 함께 제공된다. INSTALLED_APPS 정의에 새로 만든
+앱을 등록한다. (testproject/testproject/settings.py)
+
+한가지 더 앱을 설치한다고 모델에 묘사된 데이터베이스 테이블을 만든 것이 아니다. 
+그렇게 하기 위해선 migrate 명령을 써야한다.
+
+1.python manage.py migrate를 했더니 적용할 migration이 없다고 한다.
+2.python manage.py makemigrations books를 먼저해야 books를 위한 migrations을 하나보다.
+그랬더니 create model book이라고 뜸
+그 후에 python manage.py migrate를 했더니 OK라고 떴다.
+
+1. 명령은 데이터베이스에 변경 사항이 있을 때 반영해주는 명령이라고 하는데
+데이터베이스 자체에 아무것도 없었기 때문에? 처음에 적용할게 없었다고 한거같다.
+
+장고는 모든 웹 프로젝트 개발시에 반드시 사용자의 그룹 테이블이 필요하다고 가정하고
+설계되었다. 그래서 테이블을 만들지 않았더라도, 사용자 및 사용자 그룹 테이블을 
+만들어주기 위해서 프로젝트 개발 시작 시점에 이 명령을 실행하는 것이다.
+
+명령을 실행하면 migrate 명령에 대한 로그가 보이고, 실행결과로 SQLite3 데이터베이스
+파일인 db.sqlite3 파일이 생성된 것을 확인할 수 있다.
+
+사실 내가 한 부분이 책의 내용과는 살짝 달랐다. 다음에 할 때 한번 더 확인하면 좋지
+
+app을 설치하는 것이 모델에 설명된 데이터베이스 테이블을 생성하는 것은 아니다.
+그렇게 하기 위해서는 manage.py 유틸리티에서 migrate 명령을 사용한다. 
+다른 쉘을 실행시키거나 ctrl c로 서버를 끄고 실행해라
+
+장고에서는 개발 과정에 현재 상태를 확인해 볼 수 있도록 runserver라는 간단한
+테스트용 웹 서버를 제공해준다. 
+
+장고에서 기본적으로 제공해주는 Admin 사이트에 접속해서 테이블이 생성된 것을 볼 
+수 있다. URL 경로 끝에 /admin만 치면 된다.
+python manage.py createsuperuser
+
+다음 그림과 같이 화면의 지시에 따라 관리자를 생성 가능
+
+장고에서 만들어 준 User와 Groups 테이블이 생성된 것을 볼 수 있다. 
+이 Admin 사이트에서 앞으로 만들게 될 테이블에 대한 데이터의 입력, 변경, 삭제
+등의 작업을 할 수 있다. 어드민 화면에서 Users와 Groups 테이블이 보이는 것은
+이미 settings.py 파일에 django.contrib.auth 어플리케이션이 등록되어 있기 때문이다.
+(Installed_APPS에 보면 auth가 등록되어 있다.)
+
+어플리케이션 개발하기
+
+1. 코딩에 들어가기 앞서, 어플리케이션의 로직을 설계해야된다.
+2. 우리가 개발하게 될 어플리케이션은 설문에 해당하는 질문을 보여주고, 
+질문에 포함되어있는 답변 항목에 투표한 후, 투표 결과를 알려주는 예제
+
+개발 요구 사항을 분석해 본 결과 다음 그림과 같이 3개의 페이지에 대한 
+개발이 필요하다고 판단
+
+index.html > detail.html > result.html
+
+모델 작업은 데이터베이스에 테이블을 생성하도록 해주는 작업입니다.
+
+settings.py 설정 파일은 프로젝트의 전반적인 사항들을 설정해주는 곳으로,
+루트 디렉토리를 포함한 각종 디렉토리의 위치, 로그의 형식, 프로젝트에
+포함된 어플리케이션 등이 지정되어 있어서 그 내용에 익숙해질 수록 장고의 모습을
+이해하는 데 도움이 된다.
+
+애플리케이션 개발하기  - View 및 Template 코딩
+
+polls 어플리케이션을 설계할 때 3개의 페이지가 필요했다.
+이 3개의 페이지를 보여주기 위해 필요한 뷰와 템플릿을 코딩
+
+요청부터 응답까지의 처리흐름에 대한 로직이 설계되어야 한다.
+개발자가 어떻게 설계하느냐에 따라 달라지겠지만, 여기서는
+4개의 URL과 뷰가 필요하다고 판단하고, 템플릿 파일은 3개로 설꼐
+
+로직의 흐름상 URLConf를 먼저 코딩한 후에 뷰, 템플릿 혹은 역으로 코딩하는 것이
+일반적이다.
+
+As of Django 1.10, patterns 모듈이 없어졋다. 1.8이후로 deprecated되었다.
+urlpatterns = [] 이런 방식을 사용해야한다.
+
+url() 함수는 장고 라이브러리 django.conf.urls 패키지의 __init__py. 파일에 
+아래처럼 정의되어있다. 
+
+url(regex,view,kwargs=None,name=None,prefix='')
+
+regex: URL을 정규표현식으로 표현한다.
+정규표현식을 통해 뷰함수에 넘겨줄 파라미터를 추출할 수 있다.
+
+view: 요청의 URL이 regex 인자에 매칭되면 장고가 뷰 함수를 호출합니다.
+뷰 함수에는 HttpRequest와 regex에서 추출한 항목을 인자로 보내준다.
+
+kwargs: regex 인자에서 추출한 파라미터 외에 추가적인 인자를 파이썬 사전 타입의
+키워드 인자로 뷰 함수에 넘겨줄 수 있다.
+
+
+
+

@@ -2,22 +2,37 @@ from django.shortcuts import render, redirect
 
 from .forms import PredictForm
 from .models import Predict
-import movie_serve
+# import movie_serve
 from bs4 import BeautifulSoup
 import requests
-import urllib
+import datetime
+# import urllib
 
 
 # Create your views here.
 def index(request):
+
     if request.method == 'POST':
         form = PredictForm(request.POST)
         if form.is_valid():
+
+            from models import Serve
             obj = form.save(commit=False)
-            obj = update(obj)
-            obj.audience_num = movie_serve.predict(obj.rating_before, obj.rating_after, obj.num_news, obj.distributor)
+            # obj = update(obj)
+            # obj.audience_num = movie_serve.predict(obj.rating_before, obj.rating_after, obj.num_news, obj.distributor)
+            obj = parse(obj)
+            # today = datetime.date.today()
+
             # obj.audience_num= movie_serve.predict(obj.screen_num_7,obj.show_num_7,obj.money_num_7,obj.audience_num_7,
-            # obj.director_effect,obj.distributor_effect,obj.actor_effect,obj.age,obj.nationality,obj.rating_before,obj.rating_after)
+            #                                      obj.director_effect,obj.distributor_effect,obj.actor_effect,obj.age,obj.nationality,obj.before_grade,obj.after_grade)
+            # if datetime.date(*map(int, obj.release_day.split('-'))) <= today:
+            obj.audience_num = Serve.SMOreg(obj)
+            print(obj.audience_num)
+            # else:
+            #    obj.audience_num = Serve.SMOreg_before(obj)
+            if int(obj.audience_num) < 200000:
+                obj.audience_num = 200000
+
             # feature : 7 days - 4
             #           effect - 3
             #           age, nationality, month - 3
@@ -26,24 +41,45 @@ def index(request):
             obj.save()
 
             return redirect('/')
+        else :
+            print(form.errors)
 
-    form = PredictForm()
-    predicts = Predict.objects.order_by("-id")
-    ctx = {'form': form, 'predicts': predicts}
-    return render(request, 'predicts/index.html', ctx)
+    else :
+        print("!23")
+        form = PredictForm()
+        predicts = Predict.objects.order_by("-id")
+        ctx = {'form': form, 'predicts': predicts}
+        return render(request, 'predicts/index.html', ctx)
 
-
+"""
 def refresh(request, predict_id):
     obj = Predict.objects.get(id=predict_id)
-    obj = update(obj)
-    obj.audience_num = movie_serve.predict(obj.rating_before, obj.rating_after, obj.num_news, obj.distributor)
-    # obj.audience_num= movie_serve.predict(obj.screen_num_7,obj.show_num_7,obj.money_num_7,obj.audience_num_7,
-    # obj.director_effect,obj.distributor_effect,obj.actor_effect,obj.age,obj.nationality,obj.rating_before,obj.rating_after)
+    # obj = update(obj)
+    # obj.audience_num = movie_serve.predict(obj.rating_before, obj.rating_after, obj.num_news, obj.distributor)
+    obj.audience_num= movie_serve.predict(obj.screen_num_7,obj.show_num_7,obj.money_num_7,obj.audience_num_7,
+                                          obj.director_effect,obj.distributor_effect,obj.actor_effect,obj.age,obj.nationality,obj.rating_before,obj.rating_after)
+    obj.save()
+
+    return redirect("/")
+"""
+def serve(request, predict_id):
+    from models import Serve
+
+    obj = Predict.objects.get(id=predict_id)
+    obj = parse(obj)
+    today = datetime.date.today()
+    #if datetime.date(*map(int, obj.release_day.split('-'))) <= today:
+    obj.audience_num = Serve.SMOreg(obj)
+    #else:
+    #    obj.audience_num = Serve.SMOreg_before(obj)
+    if int(obj.audience_num) < 200000:
+        obj.audience_num = 200000
+
     obj.save()
 
     return redirect("/")
 
-
+"""
 def update(obj):
     r = requests.get(obj.url.replace('basic', 'point'))
     soup = BeautifulSoup(r.text)
@@ -82,13 +118,16 @@ def update(obj):
         pass
 
     return obj
-
+"""
 def parse(obj):
     r = requests.get(obj.naver_url.replace('basic','point'))
     soup = BeautifulSoup(r.text)
 
     # title, image_url
     obj.title = soup.select(".h_movie a")[0].text
+    # obj.release_day = soup.select("dl.info_spec dd span:nth-of-type(4) a")[0].text[1:] + \
+    #                  soup.select("dl.info_spec dd span:nth-of-type(4) a")[1].text
+    # obj.release_day = obj.release_day.replace('.', '-')
     obj.image_url = soup.select(".poster img")[0]['src']
     obj.image_url = obj.image_url.split('?type=',1)[0]
 
@@ -157,7 +196,6 @@ def parse(obj):
                       data={'code': obj.movie_code, 'sType': 'stat'})
     soup = BeautifulSoup(r.text)
 
-    index = 0
     screen_num_7 = 0
     show_num_7 = 0
     money_num_7 = 0

@@ -25,13 +25,13 @@
     <form method="post" class="form-inline">
         {% csrf_token %}
         <div class="form-group col-4">
-            <input placeholder="네이버 영화 URL" name="url" class="form-control mx-sm-2 col">
+            <input placeholder="네이버 영화 URL" name="naver_url" class="form-control mx-sm-2 col">
         </div>
         <div class="form-group col-3">
-            <input placeholder="영화 진흥원 코드" name="code" class="form-control mx-sm-2 col">
+            <input placeholder="영화 진흥원 코드" name="movie_code" class="form-control mx-sm-2 col">
         </div>
         <div class="form-group col-3">
-            <select name="distributor" class="form-control mx-sm-2 col">
+            <select name="distributor_effect" class="form-control mx-sm-2 col">
                 <option value="1">CJ E&M</option>
                 <option value="1">SHOWBOX (쇼박스)</option>
                 <option value="1">NEW (넥스트엔터테인먼트월드)</option>
@@ -51,16 +51,18 @@
                     <div class="border" style="padding-top: 10px;padding-bottom: 10px">
                         <div class="row">
                             <div class="col-4 text-center">
-                                <a href="{{ p.url }}"><img src="{{ p.image_url }}" width="126" height="180"/></a>
+                                <a href="{{ p.naver_url }}"><img src="{{ p.image_url }}" width="126" height="180"/></a>
                             </div>
                             <div class="text-center col-5" style="margin-top:3em">
-                                <h4><a href="{{ p.url }}">{{ p.title }}</a><br></h4>
-                                개봉 전 평점 <span class="badge badge-pill badge-danger">{{ p.rating_before }}</span><br>
-                                개봉 후 평점 <span class="badge badge-pill badge-danger">{{ p.rating_after }}</span>
+                                <h4><a href="{{ p.naver_url }}">{{ p.title }}</a><br></h4>
+                                개봉 전 평점 <span class="badge badge-pill badge-danger">{{ p.before_grade }}</span><br>
+                                개봉 후 평점 <span class="badge badge-pill badge-danger">{{ p.after_grade }}</span>
                             </div>
                             <div class="col text-center" style="margin-top: 3em">
-                                예상 관람객 수<br><span class="badge badge-dark">{{ p.num_viewers }}명</span><br>
-                                <a href="refresh/{{ p.id }}" style="color: inherit;"><i class="fa fa-2x fa-refresh"></i></a>
+                                예상 관람객 수<br><span class="badge badge-dark">{{ p.audience_num }}명</span><br>
+                                <!--
+                                <a href="serve/{{ p.predict_id }}" style="color: inherit;"><i class="fa fa-2x fa-refresh"></i></a>
+                                -->
                             </div>
                         </div>
                     </div>
