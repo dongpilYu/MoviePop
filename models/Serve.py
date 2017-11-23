@@ -5,29 +5,23 @@ from weka.classifiers import Classifier
 from weka.core.converters import Loader
 from weka.core.converters import ndarray_to_instances
 import os
-from sklearn.svm import SVR
 from sklearn.externals import joblib
-
-
+import models.makeModel
 def SMOreg(obj):
 
+    # make model
+    #models.makeModel.modeling()
+
     # load model
-    print(123)
     clf2 = joblib.load('models/SMOreg.pkl')
-    print(456)
-    input = np.array([obj.screen_num_7, obj.show_num_7, obj.money_num_7, obj.audience_num_7, obj.director_effect,
+
+
+    input = np.array([[obj.screen_num_7, obj.show_num_7, obj.money_num_7, obj.audience_num_7, obj.director_effect,
                        obj.distributor_effect, obj.month, obj.nationality, obj.before_grade, obj.after_grade, obj.age,
-                       obj.actor_effect], dtype=np.float64)
-    print(789)
-    input.reshape(1,-1)
-    print(000)
-    #instance = ndarray_to_instances(input, relation="input")
+                       obj.actor_effect]], dtype=np.float64)
 
-    #for index, inst in enumerate(instance):
-    #    audience_num = clf2.classify_instance(inst)
-
-    audience_num = clf2.predict(input)
-
+    audience_num = models.makeModel.modeling(input)
+    print(audience_num)
     return audience_num
 
 """
