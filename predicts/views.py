@@ -2,12 +2,11 @@ from django.shortcuts import render, redirect
 
 from .forms import PredictForm
 from .models import Predict
-# import movie_serve
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 from bs4 import BeautifulSoup
 import requests
 import datetime
-# import urllib
-
 
 # Create your views here.
 def index(request):
@@ -18,18 +17,17 @@ def index(request):
 
             from models import Serve
             obj = form.save(commit=False)
-            # obj = update(obj)
-            # obj.audience_num = movie_serve.predict(obj.rating_before, obj.rating_after, obj.num_news, obj.distributor)
-            obj = parse(obj)
-            # today = datetime.date.today()
 
-            # obj.audience_num= movie_serve.predict(obj.screen_num_7,obj.show_num_7,obj.money_num_7,obj.audience_num_7,
-            #                                      obj.director_effect,obj.distributor_effect,obj.actor_effect,obj.age,obj.nationality,obj.before_grade,obj.after_grade)
+            obj = parse(obj)
+            if obj == None:
+                print(form.errors)
+                handler404(request)
+            # today = datetime.date.today()
             # if datetime.date(*map(int, obj.release_day.split('-'))) <= today:
+
             obj.audience_num = Serve.SMOreg(obj)
             print(obj.audience_num)
-            # else:
-            #    obj.audience_num = Serve.SMOreg_before(obj)
+
             if int(obj.audience_num) < 200000:
                 obj.audience_num = 200000
 
@@ -42,31 +40,29 @@ def index(request):
 
             return redirect('/')
         else :
-            print(form.errors)
+            handler404(request)
 
     else :
-        print("!23")
+
         form = PredictForm()
         predicts = Predict.objects.order_by("-id")
         ctx = {'form': form, 'predicts': predicts}
         return render(request, 'predicts/index.html', ctx)
 
-"""
-def refresh(request, predict_id):
-    obj = Predict.objects.get(id=predict_id)
-    # obj = update(obj)
-    # obj.audience_num = movie_serve.predict(obj.rating_before, obj.rating_after, obj.num_news, obj.distributor)
-    obj.audience_num= movie_serve.predict(obj.screen_num_7,obj.show_num_7,obj.money_num_7,obj.audience_num_7,
-                                          obj.director_effect,obj.distributor_effect,obj.actor_effect,obj.age,obj.nationality,obj.rating_before,obj.rating_after)
-    obj.save()
+def handler404(request):
+    response = render_to_response('blog/page_404.html', {},
+                                  context_instance=RequestContext(request))
+    response.status_code = 404
+    return response
 
-    return redirect("/")
-"""
 def serve(request, predict_id):
     from models import Serve
 
     obj = Predict.objects.get(id=predict_id)
     obj = parse(obj)
+    if obj == None:
+        handler404(request)
+
     today = datetime.date.today()
     #if datetime.date(*map(int, obj.release_day.split('-'))) <= today:
     obj.audience_num = Serve.SMOreg(obj)
@@ -78,7 +74,6 @@ def serve(request, predict_id):
     obj.save()
 
     return redirect("/")
-
 """
 def update(obj):
     r = requests.get(obj.url.replace('basic', 'point'))
@@ -120,9 +115,11 @@ def update(obj):
     return obj
 """
 def parse(obj):
-    r = requests.get(obj.naver_url.replace('basic','point'))
-    soup = BeautifulSoup(r.text)
-
+    try:
+        r = requests.get(obj.naver_url.replace('basic','point'))
+        soup = BeautifulSoup(r.text)
+    except:
+        return
     # title, image_url
     obj.title = soup.select(".h_movie a")[0].text
     # obj.release_day = soup.select("dl.info_spec dd span:nth-of-type(4) a")[0].text[1:] + \
@@ -190,11 +187,15 @@ def parse(obj):
         if soup.select("dl.info_spec dd:nth-of-type(2) a")[0].text == director:
             top_director_count += 1
     obj.director_effect = top_director_count
-    
-    # 영화 진흥원 파싱
-    r = requests.post("http://www.kobis.or.kr/kobis/business/mast/mvie/searchMovieDtl.do",
-                      data={'code': obj.movie_code, 'sType': 'stat'})
-    soup = BeautifulSoup(r.text)
+
+    try:
+        # 영화 진흥원 파싱
+        r = requests.post("http://www.kobis.or.kr/kobis/business/mast/mvie/searchMovieDtl.do",
+                          data={'code': obj.movie_code, 'sType': 'stat'})
+
+        soup = BeautifulSoup(r.text)
+    except:
+        return
 
     screen_num_7 = 0
     show_num_7 = 0

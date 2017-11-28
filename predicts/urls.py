@@ -1,8 +1,9 @@
-from django.conf.urls import url
+from django.conf.urls import url, handler404
 from . import views
 
 urlpatterns = [
     url(r'^$', views.index, name='home'),
-    # url(r'refresh/(?P<predict_id>.+)$', views.refresh)
     url(r'serve/(?P<predict_id>.+)$', views.serve)
 ]
+
+handler400 = 'blog.views.bad_request'
