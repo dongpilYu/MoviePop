@@ -6,26 +6,29 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from bs4 import BeautifulSoup
 import requests
-import datetime
+from django.http import Http404
 
 # Create your views here.
 def index(request):
 
+    rbX=rbY=0
     if request.method == 'POST':
         form = PredictForm(request.POST)
         if form.is_valid():
 
             from models import Serve
             obj = form.save(commit=False)
+            try:
+              obj = parse(obj)
 
-            obj = parse(obj)
-            if obj == None:
-                print(form.errors)
-                handler404(request)
-            # today = datetime.date.today()
-            # if datetime.date(*map(int, obj.release_day.split('-'))) <= today:
+            except:
+                raise Http404("Wrong input")
 
-            obj.audience_num = Serve.SMOreg(obj)
+            dict = Serve.SMOreg(obj, rbX, rbY)
+            obj.audience_num=int(dict['audience_num'])
+            rbX = dict['rbX']
+            rbY = dict['rbY']
+
             print(obj.audience_num)
 
             if int(obj.audience_num) < 200000:
@@ -40,8 +43,7 @@ def index(request):
 
             return redirect('/')
         else :
-            handler404(request)
-
+            raise Http404("Wrong input")
     else :
 
         form = PredictForm()
@@ -49,25 +51,22 @@ def index(request):
         ctx = {'form': form, 'predicts': predicts}
         return render(request, 'predicts/index.html', ctx)
 
-def handler404(request):
-    response = render_to_response('blog/page_404.html', {},
-                                  context_instance=RequestContext(request))
-    response.status_code = 404
-    return response
 
 def serve(request, predict_id):
     from models import Serve
-
+    rbX=rbY=0
     obj = Predict.objects.get(id=predict_id)
-    obj = parse(obj)
-    if obj == None:
-        handler404(request)
+    try:
+        obj = parse(obj)
+    except:
+        raise Http404("입력 인자가 잘못되었습니다.")
 
-    today = datetime.date.today()
-    #if datetime.date(*map(int, obj.release_day.split('-'))) <= today:
-    obj.audience_num = Serve.SMOreg(obj)
-    #else:
-    #    obj.audience_num = Serve.SMOreg_before(obj)
+    dict = Serve.SMOreg(obj, rbX, rbY)
+    print(dict['audience_num'])
+    obj.audience_num = int(dict['audience_num'])
+
+    rbX = dict['rbX']
+    rbY = dict['rbY']
     if int(obj.audience_num) < 200000:
         obj.audience_num = 200000
 
@@ -119,12 +118,10 @@ def parse(obj):
         r = requests.get(obj.naver_url.replace('basic','point'))
         soup = BeautifulSoup(r.text)
     except:
-        return
+        raise Http404("Parsing error")
+
     # title, image_url
     obj.title = soup.select(".h_movie a")[0].text
-    # obj.release_day = soup.select("dl.info_spec dd span:nth-of-type(4) a")[0].text[1:] + \
-    #                  soup.select("dl.info_spec dd span:nth-of-type(4) a")[1].text
-    # obj.release_day = obj.release_day.replace('.', '-')
     obj.image_url = soup.select(".poster img")[0]['src']
     obj.image_url = obj.image_url.split('?type=',1)[0]
 

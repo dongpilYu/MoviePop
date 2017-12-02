@@ -2,8 +2,6 @@ from sklearn.svm import SVR
 from sklearn.externals import joblib
 from sklearn.preprocessing import RobustScaler
 import numpy as np
-from sklearn.preprocessing import StandardScaler
-# load the CSV file as a numpy matrix
 def modeling(input) :
 
     dataset = np.loadtxt("models/First_trial_regression.csv", delimiter=",")
@@ -23,13 +21,12 @@ def modeling(input) :
     clf.fit(X, Y)
 
     joblib.dump(clf, 'models/SMOreg.pkl')
-
     clf2 = joblib.load('models/SMOreg.pkl')
-
 
     audience_num = clf2.predict(rbX.transform(input))
     audience_num = np.expand_dims(audience_num,0)
     audience_num = audience_num.T
     audience_num = rbY.inverse_transform(audience_num)
+    audience_num = np.squeeze(audience_num)
 
-    return audience_num
+    return {'audience_num': audience_num,'rbX': rbX, 'rbY': rbY}
